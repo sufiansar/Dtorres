@@ -20,6 +20,9 @@ RUN npm install --only=production
 # Copy built JS
 COPY --from=builder /Dtorres/dist ./dist
 
+#Copy Template files
+COPY --from=builder /Dtorres/src/app/utility/templates/ ./dist/app/utility/templates/
+
 # Copy prisma folder (IMPORTANT)
 COPY --from=builder /Dtorres/prisma ./prisma
 
