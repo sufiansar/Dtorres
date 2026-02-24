@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  api:
+    container_name: dtorres-api # change this to your desired container name
+    build: .
+    ports:
+      - "8888:8888" # change this to match the port your app listens on
+      - "465:465" # SMTP port for email sending
+      - "11802:11802" # change this to match the port your app listens on for WebSocket connections
+    env_file:
+      - .env
+    restart: unless-stopped
