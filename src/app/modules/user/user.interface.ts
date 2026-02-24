@@ -13,7 +13,7 @@ export interface IUser {
   otp?: number | null;
   city?: string | null;
   isVerified?: boolean;
-  commonditiId?: string | null;
+
   isActive?: boolean;
   userStatus?: UserStatus;
   companyName?: string | null;
@@ -39,8 +39,5 @@ export interface IUserUpdate {
 
   userStatus?: UserStatus;
 
-  companyName?: string | null;
-  categoryId?: string | null;
-  website?: string | null;
   role?: UserRole;
 }

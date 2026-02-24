@@ -130,58 +130,11 @@ const getme = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const createInvite = catchAsync(async (req, res) => {
-  const { email, role } = req.body;
-  const user = req.user;
-
-  const result = await AuthService.createInvite(email, role, user);
-
-  sendResponse(res, {
-    statusCode: HttpStatus.CREATED,
-    success: true,
-    message: "Invite sent successfully",
-    data: result,
-  });
-});
-
-const verifyInvite = catchAsync(async (req, res) => {
-  const { token } = req.query;
-
-  const invite = await AuthService.verifyInvite(token as string);
-
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Invite valid",
-    data: {
-      email: invite.email,
-      role: invite.role,
-    },
-  });
-});
-
-const acceptInvite = catchAsync(async (req, res) => {
-  const { token } = req.params;
-  const { name, password } = req.body;
-
-  const user = await AuthService.acceptInvite(token as string, name, password);
-
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Account created successfully",
-    data: user,
-  });
-});
-
 export const AuthController = {
   loginUser,
   logOUtUser,
   changeUserPassword,
   forgotPassword,
   resetPassword,
-  createInvite,
-  verifyInvite,
-  acceptInvite,
   getme,
 };

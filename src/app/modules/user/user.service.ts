@@ -17,17 +17,6 @@ const createUser = async (userData: IUser, user: any) => {
     throw new AppError(HttpStatus.CONFLICT, "User already exists");
   }
 
-  //  Vendor & Procurement Team cannot create users
-  if (
-    user.role === UserRole.VENDOR ||
-    user.role === UserRole.PROCUREMENT_TEAM
-  ) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "You are not allowed to create users",
-    );
-  }
-
   //  Only SUPER_ADMIN can create SUPER_ADMIN
   if (
     userData.role === UserRole.SUPER_ADMIN &&
@@ -55,18 +44,13 @@ const createUser = async (userData: IUser, user: any) => {
   const newUser = await prisma.user.create({
     data: {
       name: userData.name || null,
-      companyName: userData.companyName || null,
       email: userData.email,
       passwordHash: hashedPassword,
       phone: userData.phone,
-      role: userData.role || UserRole.VENDOR,
-      commonditiId: userData?.commonditiId || null,
       address: userData.address || null,
       country: userData.country || null,
       city: userData.city || null,
       profileImage: userData.profileImage || null,
-      categoryId: userData.categoryId || null,
-      website: userData.website || null,
       isVerified: userData.isVerified ?? false,
       isActive: userData.isActive ?? true,
     },
@@ -94,31 +78,9 @@ const getUserById = async (userId: string) => {
 };
 
 const getAllUsers = async (currentUser: any) => {
-  //These roles see nobody
-  if (
-    currentUser.role === UserRole.PROCUREMENT_TEAM ||
-    currentUser.role === UserRole.VENDOR
-  ) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "You are not allowed to view users",
-    );
-  }
-
   //SUPER_ADMIN sees everyone
   if (currentUser.role === UserRole.SUPER_ADMIN) {
     return prisma.user.findMany();
-  }
-
-  // ADMIN sees only vendor + procurement team
-  if (currentUser.role === UserRole.ADMIN) {
-    return prisma.user.findMany({
-      where: {
-        role: {
-          in: [UserRole.VENDOR, UserRole.PROCUREMENT_TEAM],
-        },
-      },
-    });
   }
 
   throw new AppError(HttpStatus.FORBIDDEN, "Access denied");

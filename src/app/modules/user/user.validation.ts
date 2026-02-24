@@ -49,15 +49,6 @@ export const userUpdateSchema = z
 
     userStatus: UserStatusEnum.optional(),
 
-    companyName: z.string().optional().nullable(),
-    category: z.string().optional().nullable(),
-
-    website: z
-      .string()
-      .url("Website must be a valid URL")
-      .optional()
-      .nullable(),
-
     role: UserRoleEnum.optional(),
   })
   .strict();
@@ -72,7 +63,7 @@ export const userCreateSchema = z.object({
   phone: z.string().optional().nullable(),
 
   role: UserRoleEnum.optional(),
-  commonditiId: z.string().optional().nullable(),
+
   profileImage: z
     .string()
     .url("Profile image must be a valid URL")
@@ -84,10 +75,4 @@ export const userCreateSchema = z.object({
   country: z.string().optional().nullable(),
 
   city: z.string().optional().nullable(),
-
-  companyName: z.string().optional().nullable(),
-
-  category: z.string().optional().nullable(),
-
-  website: z.string().url("Website must be a valid URL").optional().nullable(),
 });
