@@ -3,6 +3,7 @@ import { catchAsync } from "../../utility/catchAsync";
 import { sendResponse } from "../../utility/sendResponse";
 import httpStatus from "http-status-codes";
 import { UserService } from "./user.service";
+import { JwtPayload } from "jsonwebtoken";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const userData = req.body || JSON.parse(req.body.data);
@@ -79,7 +80,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id as string;
+  const userId = (req.user as JwtPayload).id;
   const result = await UserService.getMyProfile(userId);
   sendResponse(res, {
     statusCode: httpStatus.OK,

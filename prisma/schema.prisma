@@ -124,12 +124,10 @@ model ChatSession {
   endedAt       DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   character AICharacter   @relation(fields: [characterId], references: [id])
   messages  ChatMessage[]
   addOns    ChatAddOn[]
-
   @@map("chat_sessions")
 }
 
