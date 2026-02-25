@@ -6,7 +6,7 @@ import AppError from "../../errorHelpers/AppError";
 import { IUser, IUserUpdate } from "./user.interface";
 import bcrypt from "bcryptjs";
 import HttpStatus from "http-status";
-import { th } from "zod/locales";
+
 import { deleteImageFromCLoudinary } from "../../config/clodinary.config";
 const createUser = async (userData: IUser) => {
   const hashedPassword = await bcrypt.hash(
@@ -20,9 +20,7 @@ const createUser = async (userData: IUser) => {
       email: userData.email,
       passwordHash: hashedPassword,
       phone: userData.phone,
-      address: userData.address || null,
       country: userData.country || null,
-      city: userData.city || null,
       profileImage: userData.profileImage || null,
       isVerified: userData.isVerified ?? false,
       isActive: userData.isActive ?? true,

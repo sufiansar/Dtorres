@@ -30,6 +30,9 @@ jobs:
             echo "🔹 Pull latest code"
             git pull origin main
 
+            npm run build
+            pm2 restart Dtorres
+
             echo "🔹 docker compose build (Debugging)"
             docker compose build
 

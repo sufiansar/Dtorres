@@ -13,7 +13,7 @@ console.log("Access token secret:", dbConfig.jwt.accessToken_secret);
 export const generateToken = (
   payload: JwtPayloadWithUser | JwtPayload,
   secret: string,
-  expiresIn: string
+  expiresIn: string,
 ) => {
   const token = jwt.sign(payload, secret, {
     expiresIn,
@@ -21,7 +21,6 @@ export const generateToken = (
 
   return token;
 };
-
 export const verifyToken = (token: string, secret: string) => {
   const verifiedToken = jwt.verify(token, secret) as
     | JwtPayloadWithUser

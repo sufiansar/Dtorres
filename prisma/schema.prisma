@@ -125,14 +125,16 @@ model ChatSession {
   endedAt       DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   character AICharacter   @relation(fields: [characterId], references: [id])
   messages  ChatMessage[]
   addOns    ChatAddOn[]
+<<<<<<< HEAD
+=======
 
   @@index([userId])
   @@index([characterId])
+>>>>>>> a010ed7b5e63a32a41d431e7dd68ecd02bcdca23
   @@map("chat_sessions")
 }
 

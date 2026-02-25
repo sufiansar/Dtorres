@@ -7,9 +7,6 @@ import app from "./app";
 import { seedSuperAdmin } from "./app/utility/seedSuperAdmin";
 import { connectRedis } from "./app/config/radis.config";
 import { prisma } from "./app/config/prisma";
-// import { startGmailWatch } from "./app/lib/gmail.client";
-// import ".src/app/bullMQ/workers/mailWorker";
-// import "./app/bullMQ/init";
 
 let server: Server | null = null;
 async function connectDb() {
@@ -27,7 +24,6 @@ async function startServer() {
   try {
     await connectDb();
     server = http.createServer(app);
-    // await startGmailWatch();
     server.listen(process.env.PORT, () => {
       console.log(
         `Database connected successfully.${process.env.DATABASE_URL}`,
