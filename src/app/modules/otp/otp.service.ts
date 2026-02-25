@@ -2,8 +2,7 @@ import AppError from "../../errorHelpers/AppError";
 import { redisClient } from "../../config/radis.config";
 import { prisma } from "../../config/prisma";
 import { generateOtp, OTP_EXPIRATION } from "../../helper/generateOtp";
-import { addVerifyParentOtpJob } from "../../bullMQ/queues/mailQueues";
-
+import { sendEmail } from "../../utility/sendEmail";
 
 const sendOtp = async (name: string, email: string) => {
   const user = await prisma.user.findUnique({ where: { email } });
@@ -25,7 +24,11 @@ const sendOtp = async (name: string, email: string) => {
   const expiryMinutes = Math.floor(OTP_EXPIRATION / 60);
 
   // ✅ Send email via BullMQ (background)
-  await addVerifyParentOtpJob(email, otp);
+  await sendEmail({
+    to: email,
+    subject: "Your OTP Code",
+    html: `<p>Hi ${name},</p><p>Your OTP code is: <strong>${otp}</strong></p><p>This code will expire in ${expiryMinutes} minutes.</p>`,
+  });
 
   // (optional return if frontend needs it)
   return {
@@ -51,8 +54,6 @@ const verifyOtp = async (email: string, otp: string) => {
 
   return updatedUser;
 };
-
-
 
 export const OtpService = {
   sendOtp,

@@ -86,8 +86,6 @@ function handleProcessEvents() {
 async function bootstrap() {
   await connectRedis(); // ✅ first
   await seedSuperAdmin(); // optional
-
-  await import("./app/bullMQ/init");
 }
 
 bootstrap();

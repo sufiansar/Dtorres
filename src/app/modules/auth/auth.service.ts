@@ -4,8 +4,9 @@ import dbConfig from "../../config/db.config";
 import { createUserToken } from "../../utility/userToken";
 import AppError from "../../errorHelpers/AppError";
 import httpStatus from "http-status";
-import { addForgotPasswordJob } from "../../bullMQ/queues/mailQueues";
 import { prisma } from "../../config/prisma";
+import { forgetPasswordTemplate } from "../../utility/templates/forgetPasswordTemplate";
+import { sendEmail } from "../../utility/sendEmail";
 
 interface LoginPayload {
   email: string;
@@ -89,16 +90,55 @@ const resetPassword = async (
   });
 };
 
-const forgotPassword = async (email: string) => {
-  const isUserExit = await prisma.user.findUnique({ where: { email } });
+// const forgotPassword = async (email: string) => {
+//   const isUserExit = await prisma.user.findUnique({ where: { email } });
+
+//   if (!isUserExit) {
+//     throw new AppError(httpStatus.BAD_REQUEST, "User does not exist", "");
+//   }
+
+//   // if (!isUserExit.isVerified) {
+//   //   throw new AppError(httpStatus.FORBIDDEN, "User Not Verified", "");
+//   // }
+
+//   const jwtPayload = {
+//     userId: isUserExit.id,
+//     email: isUserExit.email,
+//     role: isUserExit.role,
+//   };
+
+//   const resetLink = Jwt.sign(
+//     jwtPayload,
+//     dbConfig.jwt.accessToken_secret as string,
+//     {
+//       expiresIn: "5m",
+//     },
+//   );
+
+//   const resetUILink = `${dbConfig.frontEnd_url}/reset-Password?id=${isUserExit.id}&token=${resetLink}`;
+
+//   const result = await addForgotPasswordJob(
+//     isUserExit.email,
+//     isUserExit.name as string,
+
+//     resetUILink,
+//   );
+//   console.log("Forgot password job added to queue:", result);
+//   return result;
+// };
+
+export const forgotPassword = async (email: string) => {
+  const isUserExit = await prisma.user.findUnique({
+    where: { email },
+  });
 
   if (!isUserExit) {
     throw new AppError(httpStatus.BAD_REQUEST, "User does not exist", "");
   }
 
-  // if (!isUserExit.isVerified) {
-  //   throw new AppError(httpStatus.FORBIDDEN, "User Not Verified", "");
-  // }
+  if (!isUserExit.isVerified) {
+    throw new AppError(httpStatus.FORBIDDEN, "User Not Verified", "");
+  }
 
   const jwtPayload = {
     userId: isUserExit.id,
@@ -114,18 +154,19 @@ const forgotPassword = async (email: string) => {
     },
   );
 
-  const resetUILink = `${dbConfig.frontEnd_url}/reset-Password?id=${isUserExit.id}&token=${resetLink}`;
+  const resetUILink = `${dbConfig.frontEnd_url}/reset-password?id=${isUserExit.id}&token=${resetLink}`;
 
-  const result = await addForgotPasswordJob(
-    isUserExit.email,
-    isUserExit.name as string,
-
+  const html = forgetPasswordTemplate({
+    name: isUserExit.name || "",
     resetUILink,
-  );
-  console.log("Forgot password job added to queue:", result);
-  return result;
-};
+  });
 
+  await sendEmail({
+    to: isUserExit.email,
+    subject: "Forget Password",
+    html,
+  });
+};
 const getme = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
