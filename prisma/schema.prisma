@@ -116,6 +116,7 @@ model ChatSession {
   id            String     @id @default(auto()) @map("_id") @db.ObjectId
   userId        String     @db.ObjectId
   characterId   String     @db.ObjectId
+  roomId        String     @unique // socket.io room
   status        ChatStatus @default(ACTIVE)
   totalMessages Int        @default(0)
   coinsSpent    Int        @default(0)
@@ -130,6 +131,8 @@ model ChatSession {
   messages  ChatMessage[]
   addOns    ChatAddOn[]
 
+  @@index([userId])
+  @@index([characterId])
   @@map("chat_sessions")
 }
 
