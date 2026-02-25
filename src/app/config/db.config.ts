@@ -15,6 +15,7 @@ export default {
     client_id: process.env.GOOGLE_CLIENT_ID,
     client_secret: process.env.GOOGLE_CLIENT_SECRET,
     redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
   },
   superAdmin: {
     superAdmin_name: process.env.SUPERADMIN_NAME,
