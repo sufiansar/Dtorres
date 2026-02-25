@@ -2,7 +2,7 @@ import { UserRole, UserStatus } from "@prisma/client";
 
 export interface IUser {
   id?: string;
-  name?: string | null;
+  name: string;
   email: string;
   passwordHash: string;
   phone?: string | null;
@@ -13,16 +13,12 @@ export interface IUser {
   otp?: number | null;
   city?: string | null;
   isVerified?: boolean;
-
   isActive?: boolean;
   userStatus?: UserStatus;
-  companyName?: string | null;
-  categoryId?: string | null;
-  website?: string | null;
 }
 
 export interface IUserUpdate {
-  name?: string | null;
+  name?: string;
   email?: string;
 
   passwordHash?: string;

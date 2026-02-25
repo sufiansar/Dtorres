@@ -8,34 +8,7 @@ import bcrypt from "bcryptjs";
 import HttpStatus from "http-status";
 import { th } from "zod/locales";
 import { deleteImageFromCLoudinary } from "../../config/clodinary.config";
-const createUser = async (userData: IUser, user: any) => {
-  const existingUser = await prisma.user.findUnique({
-    where: { email: userData.email },
-  });
-
-  if (existingUser) {
-    throw new AppError(HttpStatus.CONFLICT, "User already exists");
-  }
-
-  //  Only SUPER_ADMIN can create SUPER_ADMIN
-  if (
-    userData.role === UserRole.SUPER_ADMIN &&
-    user.role !== UserRole.SUPER_ADMIN
-  ) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "Only SUPER_ADMIN can create another SUPER_ADMIN",
-    );
-  }
-
-  //  Only SUPER_ADMIN can create ADMIN
-  if (userData.role === UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "Only SUPER_ADMIN can create an ADMIN",
-    );
-  }
-
+const createUser = async (userData: IUser) => {
   const hashedPassword = await bcrypt.hash(
     userData.passwordHash,
     Number(dbConfig.bcryptJs_salt),
@@ -43,7 +16,7 @@ const createUser = async (userData: IUser, user: any) => {
 
   const newUser = await prisma.user.create({
     data: {
-      name: userData.name || null,
+      name: userData.name,
       email: userData.email,
       passwordHash: hashedPassword,
       phone: userData.phone,
@@ -78,7 +51,6 @@ const getUserById = async (userId: string) => {
 };
 
 const getAllUsers = async (currentUser: any) => {
-  //SUPER_ADMIN sees everyone
   if (currentUser.role === UserRole.SUPER_ADMIN) {
     return prisma.user.findMany();
   }
@@ -97,17 +69,6 @@ const updateUser = async (
 
   const isSelfUpdate = user.id === userId;
 
-  const isAdmin =
-    user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN;
-
-  // 🚫 Only admins can update other users
-  if (!isSelfUpdate && !isAdmin) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "You are not allowed to update other users",
-    );
-  }
-
   const existingUser = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -116,20 +77,11 @@ const updateUser = async (
     throw new AppError(HttpStatus.NOT_FOUND, "User not found");
   }
 
-  // 🚫 Users cannot change their own role
   if (isSelfUpdate && updateData.role) {
     throw new AppError(HttpStatus.FORBIDDEN, "You cannot change your own role");
   }
 
-  // 🚫 Optional: only admins can change status
-  if (updateData.userStatus && !isAdmin) {
-    throw new AppError(
-      HttpStatus.FORBIDDEN,
-      "Only admins can change user status",
-    );
-  }
-
-  // 🔐 Hash password if provided
+  //  Hash password if provided
   if (updateData.passwordHash) {
     updateData.passwordHash = await bcrypt.hash(
       updateData.passwordHash,
@@ -142,7 +94,7 @@ const updateUser = async (
     data: updateData,
   });
 
-  // 🧹 Clean up old profile image
+  //  Clean up old profile image
   if (updateData.profileImage && existingUser.profileImage) {
     try {
       await deleteFromS3(existingUser.profileImage);
@@ -174,7 +126,7 @@ const deleteUser = async (
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isSuperAdmin = currentUser.role === UserRole.SUPER_ADMIN;
 
-  // 🚫 Only ADMIN or SUPER_ADMIN can delete users
+  // Only ADMIN or SUPER_ADMIN can delete users
   if (!isAdmin && !isSuperAdmin) {
     throw new AppError(
       HttpStatus.FORBIDDEN,
@@ -182,12 +134,12 @@ const deleteUser = async (
     );
   }
 
-  // 🚫 ADMIN cannot delete SUPER_ADMIN
+  // ADMIN cannot delete SUPER_ADMIN
   if (isAdmin && targetUser.role === UserRole.SUPER_ADMIN) {
     throw new AppError(HttpStatus.FORBIDDEN, "ADMIN cannot delete SUPER_ADMIN");
   }
 
-  // ⚠️ Prevent deleting last SUPER_ADMIN
+  //  Prevent deleting last SUPER_ADMIN
   if (targetUser.role === UserRole.SUPER_ADMIN) {
     const superAdminCount = await prisma.user.count({
       where: { role: UserRole.SUPER_ADMIN },
@@ -201,7 +153,7 @@ const deleteUser = async (
     }
   }
 
-  // 🧹 Remove profile image
+  // Remove profile image
   if (targetUser.profileImage) {
     try {
       await deleteFromS3(targetUser.profileImage);

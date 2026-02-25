@@ -15,75 +15,249 @@ datasource db {
 }
 
 model User {
-  id           String @id @default(auto()) @map("_id") @db.ObjectId
-  name         String?
-  email        String @unique
-  passwordHash String
-  phone        String?
-  role         UserRole @default(USER)
-  profileImage String?
-  address      String?
-  country      String?
-  city         String?
-  otp          Int?
-  isVerified   Boolean @default(false)
-  isActive     Boolean @default(true)
-  userStatus   UserStatus @default(ACTIVE)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  email            String            @unique
+  passwordHash     String?
+  phone            String?
+  role             UserRole          @default(USER)
+  profileImage     String?
+  address          String?
+  country          String?
+  city             String?
+  otp              Int?
+  isVerified       Boolean           @default(false)
+  isActive         Boolean           @default(true)
+  userStatus       UserStatus        @default(ACTIVE)
+  coinBalance      Int               @default(0)
+  auths            Auth[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  membership       Membership?
+  chatSessions     ChatSession[]
+  coinTransactions CoinTransaction[]
+  payments         Payment[]         @relation("UserPayments")
 
   @@map("users")
 }
 
+model Auth {
+  id         String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String       @unique @db.ObjectId
+  provider   AuthProvider @default(CREDENTIALS)
+  providerId String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@map("auths")
+}
 
+model Membership {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String           @unique @db.ObjectId
+  planId          String           @db.ObjectId
+  status          MembershipStatus @default(ACTIVE)
+  startDate       DateTime         @default(now())
+  endDate         DateTime
+  autoRenew       Boolean          @default(true)
+  monthlyCoins    Int
+  coinsRemaining  Int
+  lastRenewalDate DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            MembershipPlan   @relation(fields: [planId], references: [id])
 
+  @@map("memberships")
+}
 
+model MembershipPlan {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  description  String?
+  price        Float
+  monthlyCoins Int
+  duration     Int      @default(30) // days
+  isActive     Boolean  @default(true)
+  features     String[] // array of feature descriptions
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
+  memberships Membership[]
 
+  @@map("membership_plans")
+}
 
+model AICharacter {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  slug           String   @unique
+  description    String
+  personality    String // personality traits
+  systemPrompt   String // AI behavior instructions
+  avatarImage    String
+  coverImage     String?
+  voiceTone      String? // casual, formal, playful, etc.
+  costPerMessage Int      @default(0) // coins per message
+  isActive       Boolean  @default(true)
+  popularity     Int      @default(0)
+  totalChats     Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+  chatSessions ChatSession[]
 
+  @@map("ai_characters")
+}
 
+model ChatSession {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String     @db.ObjectId
+  characterId   String     @db.ObjectId
+  status        ChatStatus @default(ACTIVE)
+  totalMessages Int        @default(0)
+  coinsSpent    Int        @default(0)
+  startedAt     DateTime   @default(now())
+  lastMessageAt DateTime   @default(now())
+  endedAt       DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character AICharacter   @relation(fields: [characterId], references: [id])
+  messages  ChatMessage[]
+  addOns    ChatAddOn[]
 
+  @@map("chat_sessions")
+}
 
+model ChatMessage {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId String      @db.ObjectId
+  role      MessageRole
+  content   String
+  coinsUsed Int         @default(0)
+  timestamp DateTime    @default(now())
+  createdAt DateTime    @default(now())
 
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-model Payment {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  method    String
-  amount    Float
-  userId    String?
-  status    PAYMENT_STATUS @default(PENDING)
+  @@map("chat_messages")
+}
+
+model ChatAddOn {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId   String   @db.ObjectId
+  name        String
+  description String?
+  coinCost    Int
+  appliedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  session ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("chat_addons")
+}
+
+model CoinTransaction {
+  id            String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String              @db.ObjectId
+  type          CoinTransactionType
+  amount        Int
+  balanceBefore Int
+  balanceAfter  Int
+  description   String
+  referenceId   String? // payment ID, session ID, etc.
+  referenceType String? // "payment", "chat", "membership", "refund"
+  createdAt     DateTime            @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_transactions")
+}
+
+model CoinPackage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  coins     Int
+  price     Float
+  bonus     Int      @default(0) // bonus coins
+  isActive  Boolean  @default(true)
+  isPopular Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("coin_packages")
+}
+
+model Payment {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
+  type            PaymentType
+  amount          Float
+  currency        String         @default("USD")
+  method          String
+  status          PAYMENT_STATUS @default(PENDING)
+  stripePaymentId String?
+  metadata        Json? // flexible field for additional payment data
+  description     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user User @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("payments")
 }
 
 model Transaction {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  status    String
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  status          String
   transactionDate DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
   @@map("transactions")
 }
 
+model SystemSettings {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model Analytics {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  date           DateTime @default(now())
+  totalUsers     Int      @default(0)
+  activeUsers    Int      @default(0)
+  totalChats     Int      @default(0)
+  coinsSpent     Int      @default(0)
+  revenue        Float    @default(0)
+  newMemberships Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@map("analytics")
+}
 
 enum UserRole {
   SUPER_ADMIN
   ADMIN
   USER
-  
 }
+
 enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
   DELETED
 }
+
 enum PAYMENT_STATUS {
   PENDING
   PAID
@@ -92,22 +266,41 @@ enum PAYMENT_STATUS {
   REFUNDED
   PARTIALLY_REFUNDED
 }
-enum OrderStatus {
-  PENDING
-  PROCESSING
-  REJECTED
-  DELIVERED
+
+enum PaymentType {
+  MEMBERSHIP
+  COIN_PURCHASE
+  REFUND
 }
 
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+  SUSPENDED
+}
 
+enum ChatStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
 
+enum MessageRole {
+  USER
+  AI
+  SYSTEM
+}
 
+enum CoinTransactionType {
+  CREDIT
+  DEBIT
+  REFUND
+  BONUS
+}
 
-
-
-
-
-
-
-
-
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+  FACEBOOK
+}

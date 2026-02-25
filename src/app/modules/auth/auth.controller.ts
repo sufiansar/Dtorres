@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { catchAsync } from "../../utility/catchAsync";
 import { sendResponse } from "../../utility/sendResponse";
 import httpStatus from "http-status";
@@ -6,6 +6,10 @@ import dbConfig from "../../config/db.config";
 import { AuthService } from "./auth.service";
 import { JwtPayload } from "jsonwebtoken";
 import HttpStatus from "http-status";
+import passport from "passport";
+import AppError from "../../errorHelpers/AppError";
+import { setAuthCookie } from "../../utility/setCookie";
+import { createUserToken } from "../../utility/userToken";
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const accessTokenExpireIn = dbConfig.jwt.accessToken_expiresIn as string;
@@ -66,6 +70,37 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const credentialsLogin = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
+      if (err) {
+        return next(new AppError(401, err));
+      }
+
+      if (!user) {
+        return next(new AppError(401, info.message));
+      }
+
+      const userTokens = await createUserToken(user);
+
+      const { password: pass, ...rest } = user;
+
+      setAuthCookie(res, userTokens);
+
+      sendResponse(res, {
+        success: true,
+        statusCode: httpStatus.OK,
+        message: "User Logged In Successfully",
+        data: {
+          accessToken: userTokens.accessToken,
+          refreshToken: userTokens.refreshToken,
+          user: rest,
+        },
+      });
+    })(req, res, next);
+  },
+);
+
 const logOUtUser = catchAsync(async (req: Request, res: Response) => {
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
@@ -79,7 +114,7 @@ const logOUtUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 const changeUserPassword = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.id; // Assuming user ID is available in req.user
+  const userId = (req?.user as JwtPayload)?.id; // Assuming user ID is available in req.user
   const { newPassword, oldPassword } = req.body;
 
   await AuthService.changeUserPassword(userId, newPassword, oldPassword);
@@ -118,7 +153,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getme = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+  const userId = (req?.user as JwtPayload)?.id;
 
   const user = await AuthService.getme(userId);
 
@@ -136,5 +171,6 @@ export const AuthController = {
   changeUserPassword,
   forgotPassword,
   resetPassword,
+  credentialsLogin,
   getme,
 };

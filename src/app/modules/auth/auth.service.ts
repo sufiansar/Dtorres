@@ -27,7 +27,7 @@ const loginUser = async (payload: LoginPayload) => {
 
   const isCorrectPassword = await bcrypt.compare(
     payload.password,
-    userData.passwordHash,
+    userData.passwordHash!,
   );
   if (!isCorrectPassword) {
     throw new Error("Password is incorrect");
@@ -52,7 +52,7 @@ const changeUserPassword = async (
 
   const isOldPasswordCorrect = await bcrypt.compare(
     oldPassword,
-    user.passwordHash,
+    user?.passwordHash!,
   );
   if (!isOldPasswordCorrect) {
     throw new Error("Old password is incorrect");

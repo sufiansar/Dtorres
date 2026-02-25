@@ -5,7 +5,6 @@ import httpStatus from "http-status-codes";
 import { UserService } from "./user.service";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user;
   const userData = req.body || JSON.parse(req.body.data);
   const profileImage = req.file?.path;
   if (profileImage) {
@@ -14,7 +13,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 
   const payload = { ...userData };
 
-  const result = await UserService.createUser(payload, user);
+  const result = await UserService.createUser(payload);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
