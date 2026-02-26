@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  // output   = "../generated/prisma"
 }
 
 datasource db {
@@ -29,14 +28,16 @@ model User {
   isVerified       Boolean           @default(false)
   isActive         Boolean           @default(true)
   userStatus       UserStatus        @default(ACTIVE)
-  coinBalance      Int               @default(0)
-  auths            Auth[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  coins            Int               @default(0)
+  stripeCustomerId String?           // ⬅️ Stripe Customer ID
   membership       Membership?
+  auths            Auth[]
   chatSessions     ChatSession[]
   coinTransactions CoinTransaction[]
   payments         Payment[]         @relation("UserPayments")
+  transactions     Transaction[]     @relation("UserPayments")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@map("users")
 }
@@ -64,6 +65,7 @@ model Membership {
   autoRenew       Boolean          @default(true)
   monthlyCoins    Int
   coinsRemaining  Int
+  stripeSubscriptionId String?    
   lastRenewalDate DateTime         @default(now())
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -80,6 +82,7 @@ model MembershipPlan {
   price        Float
   monthlyCoins Int
   duration     Int      @default(30) // days
+  stripePriceId String?   // Stripe Price ID
   isActive     Boolean  @default(true)
   features     String[] // array of feature descriptions
   createdAt    DateTime @default(now())
@@ -103,6 +106,7 @@ model AICharacter {
   costPerMessage Int      @default(0) // coins per message
   isActive       Boolean  @default(true)
   popularity     Int      @default(0)
+  tags           String[] // e.g. ["friendly", "professional"]
   totalChats     Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -174,7 +178,6 @@ model CoinTransaction {
   referenceId   String? // payment ID, session ID, etc.
   referenceType String? // "payment", "chat", "membership", "refund"
   createdAt     DateTime            @default(now())
-
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("coin_transactions")
@@ -190,7 +193,6 @@ model CoinPackage {
   isPopular Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   @@map("coin_packages")
 }
 
@@ -214,15 +216,17 @@ model Payment {
 }
 
 model Transaction {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  status          String
-  transactionDate DateTime @default(now())
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String @db.ObjectId
+  amount          Int
+  coins           Int
+  status          PAYMENT_STATUS
+  stripeSessionId String?
+  stripeData      Json?
+  type            PaymentType
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@map("transactions")
+  user User @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
 }
-
 model SystemSettings {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   key         String   @unique
@@ -270,7 +274,7 @@ enum PAYMENT_STATUS {
 }
 
 enum PaymentType {
-  MEMBERSHIP
+  SUBSCRIPTION
   COIN_PURCHASE
   REFUND
 }
