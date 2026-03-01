@@ -44,11 +44,9 @@
     "passport-local": "^1.0.0",
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.17.2",
-    "prisma": "6.19",
     "redis": "^5.10.0",
     "s3": "^4.4.0",
     "stripe": "^20.4.0",
-    "ts-node-dev": "^2.0.0",
     "uuid": "^13.0.0",
     "xlsx": "^0.18.5",
     "zod": "^4.3.2"
@@ -69,6 +67,8 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-local": "^1.0.38",
     "@types/pdfkit": "^0.17.4",
+    "prisma": "6.19",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"
   }
 }
