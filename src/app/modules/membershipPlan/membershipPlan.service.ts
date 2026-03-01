@@ -75,7 +75,7 @@ export const cancelSubscriptionService = async (userId: string) => {
   return true;
 };
 
-export const getAllSubscription = async (user: any, query: any) => {
+export const getAllSubscriptionService = async (user: any, query: any) => {
   if (!user?.id) throw new Error("User ID is required");
 
   if (user.role === "USER") {
@@ -86,3 +86,4 @@ export const getAllSubscription = async (user: any, query: any) => {
   });
   return subscriptions;
 };
+
