@@ -15,7 +15,8 @@ COPY . .
 
 # Generate Prisma client and build TypeScript
 RUN npx prisma generate
-RUN tsc
+# Build TypeScript
+RUN npx tsc
 
 # ====== Stage 2: Production ======
 FROM node:24.13.1-alpine
