@@ -29,7 +29,7 @@ model User {
   isActive         Boolean           @default(true)
   userStatus       UserStatus        @default(ACTIVE)
   coins            Int               @default(0)
-  stripeCustomerId String?           // ⬅️ Stripe Customer ID
+  stripeCustomerId String? // ⬅️ Stripe Customer ID
   membership       Membership?
   auths            Auth[]
   chatSessions     ChatSession[]
@@ -56,37 +56,37 @@ model Auth {
 }
 
 model Membership {
-  id              String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String           @unique @db.ObjectId
-  planId          String           @db.ObjectId
-  status          MembershipStatus @default(ACTIVE)
-  startDate       DateTime         @default(now())
-  endDate         DateTime
-  autoRenew       Boolean          @default(true)
-  monthlyCoins    Int
-  coinsRemaining  Int
-  stripeSubscriptionId String?    
-  lastRenewalDate DateTime         @default(now())
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan            MembershipPlan   @relation(fields: [planId], references: [id])
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String           @unique @db.ObjectId
+  planId               String           @db.ObjectId
+  status               MembershipStatus @default(ACTIVE)
+  startDate            DateTime         @default(now())
+  endDate              DateTime
+  autoRenew            Boolean          @default(true)
+  monthlyCoins         Int
+  coinsRemaining       Int
+  stripeSubscriptionId String?
+  lastRenewalDate      DateTime         @default(now())
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                 MembershipPlan   @relation(fields: [planId], references: [id])
 
   @@map("memberships")
 }
 
 model MembershipPlan {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
-  description  String?
-  price        Float
-  monthlyCoins Int
-  duration     Int      @default(30) // days
-  stripePriceId String?   // Stripe Price ID
-  isActive     Boolean  @default(true)
-  features     String[] // array of feature descriptions
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String             @id @default(auto()) @map("_id") @db.ObjectId
+  name          MembershipPlanName
+  description   String?
+  price         Float
+  monthlyCoins  Int
+  duration      Int                @default(30) // days
+  stripePriceId String? // Stripe Price ID
+  isActive      Boolean            @default(true)
+  features      String[] // array of feature descriptions
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
   memberships Membership[]
 
@@ -117,22 +117,22 @@ model AICharacter {
 }
 
 model ChatSession {
-  id            String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String     @db.ObjectId
-  characterId   String     @db.ObjectId
-  roomId        String     @unique // socket.io room
-  status        ChatStatus @default(ACTIVE)
-  totalMessages Int        @default(0)
-  coinsSpent    Int        @default(0)
-  startedAt     DateTime   @default(now())
-  lastMessageAt DateTime   @default(now())
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String        @db.ObjectId
+  characterId   String        @db.ObjectId
+  roomId        String        @unique // socket.io room
+  status        ChatStatus    @default(ACTIVE)
+  totalMessages Int           @default(0)
+  coinsSpent    Int           @default(0)
+  startedAt     DateTime      @default(now())
+  lastMessageAt DateTime      @default(now())
   endedAt       DateTime?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  character AICharacter   @relation(fields: [characterId], references: [id])
-  messages  ChatMessage[]
-  addOns    ChatAddOn[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  character     AICharacter   @relation(fields: [characterId], references: [id])
+  messages      ChatMessage[]
+  addOns        ChatAddOn[]
 
   @@index([userId])
   @@index([characterId])
@@ -170,29 +170,36 @@ model ChatAddOn {
 model CoinTransaction {
   id            String              @id @default(auto()) @map("_id") @db.ObjectId
   userId        String              @db.ObjectId
+  packageId     String              @unique @db.ObjectId // <-- UNIQUE makes it 1:1
   type          CoinTransactionType
   amount        Int
   balanceBefore Int
   balanceAfter  Int
   description   String
-  referenceId   String? // payment ID, session ID, etc.
-  referenceType String? // "payment", "chat", "membership", "refund"
+  referenceId   String?
+  referenceType String?
   createdAt     DateTime            @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package CoinPackage @relation(fields: [packageId], references: [id])
 
   @@map("coin_transactions")
 }
 
 model CoinPackage {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   coins     Int
   price     Float
-  bonus     Int      @default(0) // bonus coins
-  isActive  Boolean  @default(true)
-  isPopular Boolean  @default(false)
+  bonus     Int     @default(0)
+  isActive  Boolean @default(true)
+  isPopular Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  transaction CoinTransaction? // <-- singular for 1:1
+
   @@map("coin_packages")
 }
 
@@ -216,17 +223,18 @@ model Payment {
 }
 
 model Transaction {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String @db.ObjectId
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String         @db.ObjectId
   amount          Int
   coins           Int
   status          PAYMENT_STATUS
   stripeSessionId String?
   stripeData      Json?
   type            PaymentType
-  createdAt       DateTime @default(now())
-  user User @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  user            User           @relation("UserPayments", fields: [userId], references: [id], onDelete: Cascade)
 }
+
 model SystemSettings {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   key         String   @unique
@@ -249,6 +257,12 @@ model Analytics {
   createdAt      DateTime @default(now())
 
   @@map("analytics")
+}
+
+enum MembershipPlanName {
+  CORE
+  ULTRA
+  IMMERSIVE
 }
 
 enum UserRole {

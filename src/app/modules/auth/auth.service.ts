@@ -36,8 +36,10 @@ const loginUser = async (payload: LoginPayload) => {
 
   const accessToken = createUserToken(userData).accessToken;
 
+  const { passwordHash, ...safeUser } = userData;
+
   const refreshToken = createUserToken(userData).refreshToken;
-  return { accessToken, refreshToken, user: userData };
+  return { accessToken, refreshToken, user: safeUser };
 };
 
 const changeUserPassword = async (
