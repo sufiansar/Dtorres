@@ -3,24 +3,24 @@ name: CI/CD Pipeline for Dtorres Backend
 on:
   push:
     branches:
-      - main # This triggers the workflow whenever code is merged/pushed to main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo (just for reference, not needed on EC2)
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: SSH to Server and deploy
+      # Step 2: Deploy via SSH to EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.HOST_IP }} # Server public IP
-          username: ${{ secrets.USER }} # Server username (usually ubuntu)
-          key: ${{ secrets.SSH_KEY }} # SSH private key (from GitHub secrets)
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
 
@@ -30,11 +30,7 @@ jobs:
             echo "🔹 Pull latest code"
             git pull origin main
 
-            npm run build
-            pm2 restart Dtorres
-
-            echo "🔹 docker compose build (Debugging)"
+            echo "🔹 Build and run Docker"
             docker compose build
-
-            echo "🔹 docker compose up (Debugging)"
             docker compose up -d
+            echo "✅ Deployment successful"

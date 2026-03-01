@@ -1,32 +1,39 @@
 # ====== Stage 1: Build ======
 FROM node:24.13.1-alpine AS builder
 
+# Set working directory
 WORKDIR /Dtorres
 
+# Copy package.json and package-lock.json
 COPY package*.json ./
+
+# Install dependencies (including devDependencies)
 RUN npm install
 
+# Copy all source code
 COPY . .
-RUN npm run build
+
+# Generate Prisma client and build TypeScript
+RUN npx prisma generate
+RUN tsc
 
 # ====== Stage 2: Production ======
 FROM node:24.13.1-alpine
 
 WORKDIR /Dtorres
 
+# Copy only production dependencies
 COPY package*.json ./
-RUN npm install
+RUN npm install --only=production
 
-# Copy built JS
+# Copy built JS files
 COPY --from=builder /Dtorres/dist ./dist
 
-
-# Copy prisma folder (IMPORTANT)
+# Copy prisma folder (needed at runtime)
 COPY --from=builder /Dtorres/prisma ./prisma
 
-# Generate prisma client HERE
-RUN npx prisma generate
-
+# Expose port
 EXPOSE 8888
-CMD ["node", "dist/server.js"]
 
+# Start the server
+CMD ["node", "dist/server.js"]
