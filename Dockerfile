@@ -15,7 +15,7 @@ FROM node:24.13.1-alpine
 WORKDIR /Dtorres
 
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm install
 
 # Copy built JS
 COPY --from=builder /Dtorres/dist ./dist
