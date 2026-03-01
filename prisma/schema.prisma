@@ -81,7 +81,7 @@ model MembershipPlan {
   description   String?
   price         Float
   monthlyCoins  Int
-  duration      Int                @default(30) // days
+  duration      DateTime
   stripePriceId String? // Stripe Price ID
   isActive      Boolean            @default(true)
   features      String[] // array of feature descriptions
@@ -260,9 +260,9 @@ model Analytics {
 }
 
 enum MembershipPlanName {
-  CORE
-  ULTRA
-  IMMERSIVE
+  BASIC
+  PREMIUM
+  VIP
 }
 
 enum UserRole {
