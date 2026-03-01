@@ -7,7 +7,7 @@ import httpStatus from "http-status";
 import { prisma } from "../../config/prisma";
 import { forgetPasswordTemplate } from "../../utility/templates/forgetPasswordTemplate";
 import { sendEmail } from "../../utility/sendEmail";
-import { GetUsers } from "./admin.interface";
+import { GetUsers, CreatePlanPayload, UpdatePlanPayload } from "./admin.interface";
 
 
 export const getUsers = async (): Promise<GetUsers[]> => {
@@ -63,10 +63,41 @@ export const getUsers = async (): Promise<GetUsers[]> => {
       transactionID: user.transactions[0]?.id || "",
       name: user.name,
       email: user.email,
-      plan: user.membership?.plan.name ?? "CORE",
+      plan: user.membership?.plan.name ?? "",
       coinBalance,
       coinUsed,
       joinDate: user.createdAt,
     };
+  });
+};
+
+
+export const getMembershipPlans = async () => {
+  return prisma.membershipPlan.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+};
+
+export const createMembershipPlan = async (payload: CreatePlanPayload) => {
+  return prisma.membershipPlan.create({
+    data: payload,
+  });
+};
+
+export const updateMembershipPlan = async (
+  membershipId: string,
+  payload: UpdatePlanPayload
+) => {
+  return prisma.membershipPlan.update({
+    where: { id: membershipId },
+    data: payload,
+  });
+};
+
+// Soft delete (recommended)
+export const deleteMembershipPlan = async (membershipId: string) => {
+  return prisma.membershipPlan.update({
+    where: { id: membershipId },
+    data: { isActive: false },
   });
 };
